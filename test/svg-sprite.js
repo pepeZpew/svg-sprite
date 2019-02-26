@@ -24,9 +24,7 @@ var should = require('should'),
     _ = require('lodash'),
     imageDiff = require('image-diff'),
     mustache = require('mustache'),
-    execFile = require('child_process').execFile,
-    phantomjs = require('phantomjs-prebuilt').path,
-    capturePhantomScript = path.resolve(__dirname, 'script/capture.phantom.js'),
+    svgDim = require('svg-dimensions'),
     sass = require('node-sass'),
     less = require('less'),
     stylus = require('stylus'),
@@ -99,17 +97,14 @@ function writeFile(file, content) {
  * @param {String} target            Screenshot file
  * @param {Function} cb                Function
  */
-function capturePhantom(src, target, cb) {
-    execFile(phantomjs, [capturePhantomScript, src, target], function (err, stdout, stderr) {
+function capturePhantom(cb) {
+    svgDim.get(this.source.path, function(err, dimensions) {
         if (err) {
-            cb(err);
-        } else if (stdout.length > 0) {
-            cb((stdout.toString().trim() === 'success') ? null : new Error('PhantomJS couldn\'t capture "' + src + '"'));
-        } else if (stderr.length > 0) {
-            cb(new Error(stderr.toString().trim()));
-        } else {
-            cb(new Error('PhantomJS couldn\'t capture "' + src + '"'));
+            cb(new Error(err.toString().trim()));
         }
+        that.height = dimensions.height;
+        that.width  = dimensions.width;
+        cb(null);
     });
 }
 
@@ -354,12 +349,7 @@ describe('svg-sprite', function () {
                     this.timeout(20000);
 
                     data.css = '../sprite.css';
-                    var out = mustache.render(previewTemplate, data),
-                        preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'css.html'), out),
-                        previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'css.html.png');
-                    preview.should.be.ok;
-
-                    capturePhantom(preview, previewImage, function (error) {
+                    capturePhantom(function (error) {
                         should(error).not.ok;
                         imageDiff({
                             actualImage: previewImage,
@@ -385,12 +375,8 @@ describe('svg-sprite', function () {
                             should(writeFile(path.join(__dirname, '..', 'tmp', 'css', 'sprite.scss.css'), scssText.css)).be.ok;
 
                             data.css = '../sprite.scss.css';
-                            var out = mustache.render(previewTemplate, data),
-                                preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'scss.html'), out),
-                                previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'scss.html.png');
-                            preview.should.be.ok;
 
-                            capturePhantom(preview, previewImage, function (error) {
+                            capturePhantom(function (error) {
                                 should(error).not.ok;
                                 imageDiff({
                                     actualImage: previewImage,
@@ -419,12 +405,8 @@ describe('svg-sprite', function () {
                             should(writeFile(path.join(__dirname, '..', 'tmp', 'css', 'sprite.less.css'), output.css)).be.ok;
 
                             data.css = '../sprite.less.css';
-                            var out = mustache.render(previewTemplate, data),
-                                preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'less.html'), out),
-                                previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'less.html.png');
-                            preview.should.be.ok;
 
-                            capturePhantom(preview, previewImage, function (error) {
+                            capturePhantom(function (error) {
                                 should(error).not.ok;
                                 imageDiff({
                                     actualImage: previewImage,
@@ -453,12 +435,8 @@ describe('svg-sprite', function () {
                             should(writeFile(path.join(__dirname, '..', 'tmp', 'css', 'sprite.styl.css'), output)).be.ok;
 
                             data.css = '../sprite.styl.css';
-                            var out = mustache.render(previewTemplate, data),
-                                preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'styl.html'), out),
-                                previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'styl.html.png');
-                            preview.should.be.ok;
 
-                            capturePhantom(preview, previewImage, function (error) {
+                            capturePhantom(function (error) {
                                 should(error).not.ok;
                                 imageDiff({
                                     actualImage: previewImage,
@@ -603,12 +581,8 @@ describe('svg-sprite', function () {
                 this.timeout(20000);
 
                 data.css = '../sprite.centered.css';
-                var out = mustache.render(previewTemplate, data),
-                    preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'css.vertical.centered.html'), out),
-                    previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'css.vertical.centered.html.png');
-                preview.should.be.ok;
 
-                capturePhantom(preview, previewImage, function (error) {
+                capturePhantom(function (error) {
                     should(error).not.ok;
                     imageDiff({
                         actualImage: previewImage,
@@ -682,12 +656,8 @@ describe('svg-sprite', function () {
                         should(writeFile(path.join(__dirname, '..', 'tmp', 'css', 'sprite.centered.scss.css'), scssText.css)).be.ok;
 
                         data.css = '../sprite.centered.scss.css';
-                        var out = mustache.render(previewTemplate, data),
-                            preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'scss.horizontal.centered.html'), out),
-                            previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'scss.horizontal.centered.html.png');
-                        preview.should.be.ok;
 
-                        capturePhantom(preview, previewImage, function (error) {
+                        capturePhantom(function (error) {
                             should(error).not.ok;
                             imageDiff({
                                 actualImage: previewImage,
@@ -764,12 +734,8 @@ describe('svg-sprite', function () {
                         should(writeFile(path.join(__dirname, '..', 'tmp', 'css', 'sprite.centered.less.css'), output.css)).be.ok;
 
                         data.css = '../sprite.centered.less.css';
-                        var out = mustache.render(previewTemplate, data),
-                            preview = writeFile(path.join(__dirname, '..', 'tmp', 'css', 'html', 'less.packed.centered.html'), out),
-                            previewImage = path.join(__dirname, '..', 'tmp', 'css', 'png', 'less.packed.centered.html.png');
-                        preview.should.be.ok;
 
-                        capturePhantom(preview, previewImage, function (error) {
+                        capturePhantom(function (error) {
                             should(error).not.ok;
                             imageDiff({
                                 actualImage: previewImage,
@@ -844,12 +810,8 @@ describe('svg-sprite', function () {
                 this.timeout(20000);
 
                 data.css = '../sprite.mixed.css';
-                var out = mustache.render(previewTemplate, data),
-                    preview = writeFile(path.join(__dirname, '..', 'tmp', 'view', 'html', 'css.vertical.mixed.html'), out),
-                    previewImage = path.join(__dirname, '..', 'tmp', 'view', 'png', 'css.vertical.mixed.html.png');
-                preview.should.be.ok;
 
-                capturePhantom(preview, previewImage, function (error) {
+                capturePhantom(function (error) {
                     should(error).not.ok;
                     imageDiff({
                         actualImage: previewImage,
@@ -927,12 +889,8 @@ describe('svg-sprite', function () {
                         should(writeFile(path.join(__dirname, '..', 'tmp', 'view', 'sprite.mixed.scss.css'), scssText.css)).be.ok;
 
                         data.css = '../sprite.mixed.scss.css';
-                        var out = mustache.render(previewTemplate, data),
-                            preview = writeFile(path.join(__dirname, '..', 'tmp', 'view', 'html', 'scss.horizontal.mixed.html'), out),
-                            previewImage = path.join(__dirname, '..', 'tmp', 'view', 'png', 'scss.horizontal.mixed.html.png');
-                        preview.should.be.ok;
 
-                        capturePhantom(preview, previewImage, function (error) {
+                        capturePhantom(function (error) {
                             should(error).not.ok;
                             imageDiff({
                                 actualImage: previewImage,
@@ -1009,12 +967,8 @@ describe('svg-sprite', function () {
                         should(writeFile(path.join(__dirname, '..', 'tmp', 'view', 'sprite.mixed.less.css'), output.css)).be.ok;
 
                         data.css = '../sprite.mixed.less.css';
-                        var out = mustache.render(previewTemplate, data),
-                            preview = writeFile(path.join(__dirname, '..', 'tmp', 'view', 'html', 'less.packed.mixed.html'), out),
-                            previewImage = path.join(__dirname, '..', 'tmp', 'view', 'png', 'less.packed.mixed.html.png');
-                        preview.should.be.ok;
 
-                        capturePhantom(preview, previewImage, function (error) {
+                        capturePhantom(function (error) {
                             should(error).not.ok;
                             imageDiff({
                                 actualImage: previewImage,
